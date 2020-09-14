@@ -1,0 +1,17 @@
+{
+    "name": "digirock/value-auth-php",
+    "description": "ValueAuth PHP library",
+    "type": "library",
+    "require": {
+        "guzzlehttp/guzzle": "^7.0",
+        "tebru/gson-php": "^0.7.3",
+        "myclabs/php-enum": "^1.7"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Shumpei Kobayashi",
+            "email": "skonb@me.com"
+        }
+    ]
+}
