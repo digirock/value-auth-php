@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ValueAuth;
+namespace ValueAuth\Wordpress;
 
 
 class WordpressAdapter
