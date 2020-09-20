@@ -27,27 +27,27 @@ class ApiClient
     /**
      * @var string|null
      */
-    protected $apiKey;
+    public $apiKey;
 
     /**
      * @var string|null
      */
-    protected $accessToken;
+    public $accessToken;
 
     /**
      * @var AccessTokenRole|null
      */
-    protected $currentRole;
+    public $currentRole;
 
     /**
      * @var bool
      */
-    protected $debug;
+    public $debug;
 
     /**
      * @var string
      */
-    protected $version;
+    public $version;
 
     /**
      * @var Gson
@@ -57,7 +57,7 @@ class ApiClient
     /**
      * @var
      */
-    protected $currentCustomerKey;
+    public $currentCustomerKey;
 
     /**
      * @var Parser
@@ -75,9 +75,11 @@ class ApiClient
      */
     function __construct(string $baseUri, ?string $apiKey, ?string $accessToken = null, ?AccessTokenRole $role = null, bool $debug = false, string $version = 'v2')
     {
-        $this->client = new Client([
-            'base_uri' => $baseUri
-        ]);
+        $options = [
+            'base_uri' => $baseUri,
+            'redirect.disable' => true
+        ];
+        $this->client = new Client($options);
         $this->apiKey = $apiKey;
         $this->accessToken = $accessToken;
         $this->currentRole = $role;
@@ -97,8 +99,10 @@ class ApiClient
     {
         $path = $this->apiPathFor($endpoint, $input);
         $options = $this->requestOptionsFor($endpoint, $input);
-        $request = new Request($endpoint->method(), $path, $options);
-        return $this->client->sendAsync($request)->then(function (ResponseInterface $response) use ($endpoint) {
+        $headers = $this->headersFor($endpoint);
+
+        $request = new Request($endpoint->method(), $path, $headers);
+        return $this->client->sendAsync($request, $options)->then(function (ResponseInterface $response) use ($endpoint) {
             return $this->gson->fromJson($response->getBody()->getContents(), $endpoint->resultType());
         }, function (RequestException $exception) {
             return $this->gson->fromJson($exception->getResponse()->getBody()->getContents(), ApiError::class);
@@ -115,7 +119,7 @@ class ApiClient
         $path = $endpoint->path();
         if ($apiInput && !empty($endpoint->pathParams())) {
             foreach ($endpoint->pathParams() as $key) {
-                $path = preg_replace('{' . $key . '}', $apiInput->$key, $path);
+                $path = str_replace('{' . $key . '}', $apiInput->$key, $path);
             }
         }
         return '/' . $this->version . $path;
@@ -126,13 +130,15 @@ class ApiClient
      * @param ApiInput $input
      * @return array
      */
-    protected function bodyFor(ApiEndpoint $endpoint, ApiInput $input): array
+    protected function bodyFor(ApiEndpoint $endpoint, ApiInput $input): ?array
     {
         $body = null;
         if (!empty($endpoint->bodyParams())) {
             $body = [];
             foreach ($endpoint->bodyParams() as $key) {
-                $body[$key] = $input->$key;
+                if ($input->$key != null) {
+                    $body[$key] = $input->$key;
+                }
             }
         }
         return $body;
@@ -143,14 +149,20 @@ class ApiClient
      * @param ApiInput $input
      * @return array
      */
-    protected function queryFor(ApiEndpoint $endpoint, ApiInput $input): array
+    protected function queryFor(ApiEndpoint $endpoint, ApiInput $input): ?array
     {
         $query = null;
         if (!empty($endpoint->queryParams())) {
             $query = [];
             foreach ($endpoint->queryParams() as $key) {
-                $query[$key] = $input->$key;
+                if ($input->$key != null) {
+                    $query[$key] = $input->$key;
+                }
             }
+        }
+
+        if ($this->debug){
+            $query['XDEBUG_SESSION_START'] = 'PHPSTORM';
         }
         return $query;
     }
@@ -163,7 +175,7 @@ class ApiClient
     {
         return [
             'Authorization' => 'Bearer ' . $this->bearerTokenFor($apiEndpoint),
-            'User-Agent' => 'value-auth-php'
+            'User-Agent' => 'value-auth-php',
         ];
     }
 
@@ -199,25 +211,15 @@ class ApiClient
 
     protected function requestOptionsFor(ApiEndpoint $endpoint, ApiInput $input): array
     {
-        $headers = $this->headersFor($endpoint);
         $body = $this->bodyFor($endpoint, $input);
         $query = $this->queryFor($endpoint, $input);
         $options = [
-            'body' => $body,
+            'json' => $body,
             'query' => $query,
-            'headers' => $headers
         ];
 
-        if ($this->debug) {
-            $ssl_options = [
-                'stream' => true,
-                'stream_context' => [
-                    'ssl' => [
-                        'allow_self_signed' => true
-                    ]
-                ]
-            ];
-            $options = array_merge($options, $ssl_options);
+        if ($this->debug){
+            $options['verify'] = false;
         }
         return $options;
     }

@@ -46,37 +46,37 @@ class ApiEndpoint
 
     public function method(): string
     {
-        return self::$method;
+        return static::$method;
     }
 
     public function path(): string
     {
-        return self::$path;
+        return static::$path;
     }
 
     public function pathParams(): array
     {
-        return self::$pathParams;
+        return static::$pathParams;
 
     }
 
     public function queryParams(): array
     {
-        return self::$queryParams;
+        return static::$queryParams;
     }
 
     public function bodyParams(): array
     {
-        return self::$bodyParams;
+        return static::$bodyParams;
     }
 
-    public function resultType(): Type
+    public function resultType(): string
     {
-        return self::$resultType;
+        return static::$resultType;
     }
 
     public function authentication(): ApiAuthentication
     {
-        return new ApiAuthentication(self::$authentication);
+        return new ApiAuthentication(static::$authentication);
     }
 }
