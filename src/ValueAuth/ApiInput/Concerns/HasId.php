@@ -1,6 +1,6 @@
 <?php
 
-namespace ValueAuth\ApiInput;
+namespace ValueAuth\ApiInput\Concerns;
 
 trait HasId
 {

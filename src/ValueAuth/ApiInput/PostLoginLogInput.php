@@ -2,20 +2,22 @@
 
 namespace ValueAuth\ApiInput;
 
+use ValueAuth\ApiEndpoint\PostLoginLogEndpoint;
+
 class PostLoginLogInput extends ApiInput
 {
     /**
-     * @var string
-     */
-    public $ip;
-
-    /**
-     * @var string
-     */
-    public $user_agent;
-
-    /**
      * @var bool
      */
-    public $is_success;
+    public $is_logged_in;
+
+    /**
+     * @var string
+     */
+    public $login_key;
+
+    /**
+     * @var string
+     */
+    public static $endpointType = PostLoginLogEndpoint::class;
 }

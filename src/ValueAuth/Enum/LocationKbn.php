@@ -1,6 +1,6 @@
 <?php
 
-namespace ValueAuth\ApiInput;
+namespace ValueAuth\Enum;
 
 use MyCLabs\Enum\Enum;
 

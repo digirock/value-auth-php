@@ -2,7 +2,7 @@
 
 namespace ValueAuth\ApiResult;
 
-use ValueAuth\ApiInput\LocationKbn;
+use ValueAuth\Enum\LocationKbn;
 
 class LocationRestriction extends Model
 {
@@ -12,7 +12,7 @@ class LocationRestriction extends Model
     public $location_kbn;
 
     /**
-     * @var ?string
+     * @var string
      */
     public $country;
 

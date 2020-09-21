@@ -2,6 +2,7 @@
 
 namespace ValueAuth\ApiInput;
 
+use ValueAuth\ApiEndpoint\GetContactEndpoint;
 use ValueAuth\Enum\SendKbn;
 
 class GetContactInput extends ApiInput
@@ -11,4 +12,9 @@ class GetContactInput extends ApiInput
      * @Type('ValueAuth\Enum\SendKbn')
      */
     public $send_kbn;
+
+    /**
+     * @var string
+     */
+    public static $endpointType = GetContactEndpoint::class;
 }

@@ -2,15 +2,17 @@
 
 namespace ValueAuth\ApiInput;
 
+use ValueAuth\ApiEndpoint\GetAccessTokenEndpoint;
+
 class GetAccessTokenInput extends ApiInput
 {
     /**
      * @var string
      */
-    public $auth_code;
+    public $role;
 
     /**
      * @var string
      */
-    public $role;
+    public static $endpointType = GetAccessTokenEndpoint::class;
 }

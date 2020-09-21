@@ -2,6 +2,9 @@
 
 namespace ValueAuth\ApiInput;
 
+use ValueAuth\ApiEndpoint\PostLocationRestrictionEndpoint;
+use ValueAuth\Enum\LocationKbn;
+
 class PostLocationRestrictionInput extends ApiInput
 {
     /**
@@ -28,4 +31,9 @@ class PostLocationRestrictionInput extends ApiInput
      * @var ?string
      */
     public $memo;
+
+    /**
+     * @var string
+     */
+    public static $endpointType = PostLocationRestrictionEndpoint::class;
 }

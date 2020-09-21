@@ -10,7 +10,7 @@ class ApiErrorContent
     public $code;
 
     /**
-     * @var string
+     * @var string|string[]|array
      */
     public $message;
 }

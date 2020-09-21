@@ -6,12 +6,12 @@ class CustomerSetting extends Model
 {
 
     /**
-     * @var ?int
+     * @var int
      */
     public $max_attempts;
 
     /**
-     * @var ?int
+     * @var int
      */
     public $security_level;
 }

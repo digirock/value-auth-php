@@ -8,6 +8,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Request;
+use http\Exception\RuntimeException;
 use Lcobucci\JWT\Parser;
 use Psr\Http\Message\ResponseInterface;
 use Tebru\Gson\Gson;
@@ -65,6 +66,11 @@ class ApiClient
     protected $jwtParser;
 
     /**
+     * @var string
+     */
+    public $authCode;
+
+    /**
      * ApiClient constructor.
      * @param string $baseUri
      * @param string|null $apiKey
@@ -73,7 +79,7 @@ class ApiClient
      * @param bool $debug
      * @param string $version
      */
-    function __construct(string $baseUri, ?string $apiKey, ?string $accessToken = null, ?AccessTokenRole $role = null, bool $debug = false, string $version = 'v2')
+    function __construct(string $baseUri, ?string $apiKey, ?string $accessToken = null, ?AccessTokenRole $role = null, bool $debug = false, string $version = 'v2', ?string $authCode = null)
     {
         $options = [
             'base_uri' => $baseUri,
@@ -87,7 +93,9 @@ class ApiClient
         $this->version = $version;
         $this->gson = Gson::builder()->build();
         $this->jwtParser = new Parser();
+        $this->authCode = $authCode;
         $this->parseAccessToken();
+
     }
 
     /**
@@ -95,8 +103,10 @@ class ApiClient
      * @param array $apiEndpoint
      * @return PromiseInterface
      */
-    function process(ApiInput $input, ApiEndpoint $endpoint): PromiseInterface
+    function process(ApiInput $input): PromiseInterface
     {
+        $endpointClass = $input::$endpointType;
+        $endpoint = new $endpointClass();
         $path = $this->apiPathFor($endpoint, $input);
         $options = $this->requestOptionsFor($endpoint, $input);
         $headers = $this->headersFor($endpoint);
@@ -119,7 +129,14 @@ class ApiClient
         $path = $endpoint->path();
         if ($apiInput && !empty($endpoint->pathParams())) {
             foreach ($endpoint->pathParams() as $key) {
-                $path = str_replace('{' . $key . '}', $apiInput->$key, $path);
+                if ($key == 'auth_code') {
+                    if (empty($this->authCode)){
+                        throw new RuntimeException("Endpoint that needs API Key requires Auth Code to be set");
+                    }
+                    $path = str_replace('{' . $key . '}', $this->authCode, $path);
+                } else if ($apiInput->$key != null) {
+                    $path = str_replace('{' . $key . '}', $apiInput->$key, $path);
+                }
             }
         }
         return '/' . $this->version . $path;
@@ -161,7 +178,7 @@ class ApiClient
             }
         }
 
-        if ($this->debug){
+        if ($this->debug) {
             $query['XDEBUG_SESSION_START'] = 'PHPSTORM';
         }
         return $query;
@@ -218,7 +235,7 @@ class ApiClient
             'query' => $query,
         ];
 
-        if ($this->debug){
+        if ($this->debug) {
             $options['verify'] = false;
         }
         return $options;

@@ -5,7 +5,7 @@ namespace ValueAuth\ApiResult;
 class Model
 {
     /**
-     * @var ?int
+     * @var int
      */
     public $id;
 }
