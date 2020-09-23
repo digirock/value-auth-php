@@ -3,7 +3,6 @@
 namespace ValueAuth;
 
 use PHPUnit\Framework\TestCase;
-use ValueAuth\ApiInput\Get2FAAccessTokenInput;
 use ValueAuth\ApiInput\Get2FACodeInput;
 use ValueAuth\ApiInput\GetAccessTokenInput;
 use ValueAuth\ApiInput\PostLoginCheckInput;
@@ -140,7 +139,7 @@ class ApiClientTest extends TestCase
     function fetch2FAAccessToken(string $login_key): AccessTokenResult
     {
         $client = $this->buildApiKeyClient();
-        $input = new Get2FAAccessTokenInput();
+        $input = new GetAccessTokenInput();
         $input->login_key = $login_key;
         $input->role = AccessTokenRole::Auth;
         $input->customer_key = self::CustomerKey;
@@ -152,7 +151,7 @@ class ApiClientTest extends TestCase
         return $result;
     }
 
-    function testGet2FAAccessToken()
+    function testGetAccessToken()
     {
         [$result, $login_key] = $this->_buildSuccessfulLogin();
         $accessToken = $this->fetch2FAAccessToken($login_key)->results->access_token;

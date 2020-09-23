@@ -8,7 +8,7 @@ use ValueAuth\Enum\ApiAuthentication;
 class GetAccessTokenEndpoint extends ApiEndpoint
 {
     public static $method = 'get';
-    public static $path = '/{auth_code}/auth/accesstoken';
+    public static $path = '/{auth_code}/twofactor/accesstoken';
     public static $pathParams = ['auth_code'];
     public static $queryParams = ['customer_key', 'role'];
     public static $resultType = AccessTokenResult::class;
