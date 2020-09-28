@@ -2,6 +2,8 @@
 
 namespace ValueAuth\ApiEndpoint;
 
+use ValueAuth\ApiResult\IpAddressRestrictionListResult;
+
 class GetIpAddressRestrictionEndpoint extends ApiEndpoint
 {
     public static $method = 'get';

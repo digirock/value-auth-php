@@ -14,5 +14,10 @@ class GetAccessTokenInput extends ApiInput
     /**
      * @var string
      */
+    public $login_key;
+
+    /**
+     * @var string
+     */
     public static $endpointType = GetAccessTokenEndpoint::class;
 }

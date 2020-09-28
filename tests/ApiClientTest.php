@@ -5,12 +5,14 @@ namespace ValueAuth;
 use PHPUnit\Framework\TestCase;
 use ValueAuth\ApiInput\Get2FACodeInput;
 use ValueAuth\ApiInput\GetAccessTokenInput;
+use ValueAuth\ApiInput\GetSiteSettingInput;
 use ValueAuth\ApiInput\PostLoginCheckInput;
 use ValueAuth\ApiInput\PostLoginLogInput;
 use ValueAuth\ApiResult\AccessTokenResult;
 use ValueAuth\ApiResult\DueDateResult;
 use ValueAuth\ApiResult\LoginCheckResult;
 use ValueAuth\ApiResult\LoginLogResult;
+use ValueAuth\ApiResult\SiteSettingResult;
 use ValueAuth\ApiResult\TwoFactorAuthSendResult;
 use ValueAuth\Enum\AccessTokenRole;
 
@@ -165,5 +167,13 @@ class ApiClientTest extends TestCase
         self::assertInstanceOf(TwoFactorAuthSendResult::class, $result);
         self::assertNotNull($result->results->due_date);
     }
+
+    function testGetSiteSetting(){
+        $client = $this->buildApiKeyClient();
+        $result = $client->process(new GetSiteSettingInput())->wait();
+        self::assertNotNull($result);
+        self::assertInstanceOf(SiteSettingResult::class, $result);
+    }
+
 
 }
