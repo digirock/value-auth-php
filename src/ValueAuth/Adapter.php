@@ -5,10 +5,14 @@ namespace ValueAuth;
 
 
 use DateTime;
+use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Signer\Key;
+use Lcobucci\JWT\Signer\Rsa\Sha256;
 use ValueAuth\ApiInput\Get2FACodeInput;
+use ValueAuth\ApiInput\GetAccessTokenInput;
 use ValueAuth\ApiInput\PostLoginCheckInput;
 use ValueAuth\ApiInput\PostLoginLogInput;
+use ValueAuth\ApiResult\AccessTokenResult;
 use ValueAuth\ApiResult\ApiError;
 use ValueAuth\ApiResult\LoginCheckResult;
 use ValueAuth\ApiResult\LoginLogResult;
@@ -75,7 +79,7 @@ class Adapter
      */
     function parseAccessToken(string $accessToken)
     {
-        $parser = new \Lcobucci\JWT\Parser();
+        $parser = new Parser();
         $parsed = $parser->parse($accessToken);
         return $parsed;
     }
@@ -91,7 +95,7 @@ class Adapter
         $parsed = $this->parseAccessToken($token);
         $customerKey = $parsed->getClaim('aud');
         $pubKey = new Key($this->publicKey);
-        $signer = new \Lcobucci\JWT\Signer\Rsa\Sha256();
+        $signer = new Sha256();
         $issuedAt = new DateTime();
         $issuedAt->setTimestamp((int)$parsed->getClaim('iat'));
         $verified = $parsed->verify($signer, $pubKey);
@@ -112,7 +116,7 @@ class Adapter
         $input->user_agent = $_SERVER['HTTP_USER_AGENT'];
         $input->customer_key = $customerKey;
         /**
-         * @var $result \ValueAuth\ApiResult\LoginCheckResult
+         * @var $result LoginCheckResult
          */
         $result = $this->client->process($input)->wait();
 
@@ -159,12 +163,12 @@ class Adapter
      */
     function fetchAccessToken($customerKey, string $role, ?string $loginKey = null)
     {
-        $input = new \ValueAuth\ApiInput\GetAccessTokenInput();
+        $input = new GetAccessTokenInput();
         $input->customer_key = $customerKey;
         $input->role = $role;
         $input->login_key = $loginKey;
         /**
-         * @var $result \ValueAuth\ApiResult\AccessTokenResult
+         * @var $result AccessTokenResult
          */
         $result = $this->client->process($input)->wait();
 
@@ -234,14 +238,14 @@ class Adapter
     function checkLoginAvailability(string $customerKey, bool $loginWillSuccess, bool $is2FAEnabled, callable $lastLoginUpdateCallback): AuthenticationStatus
     {
         $result = $this->postCheckLogin($customerKey);
-        if ($result instanceof \ValueAuth\ApiResult\ApiError) {
+        if ($result instanceof ApiError) {
             $error = AuthenticationStatus::ApiError();
             $error->reason = $result;
             return $error;
         }
         $loginKey = $result->results->login_key;
         $result = $this->postLoginLog($loginWillSuccess, $loginKey, $customerKey);
-        if ($result instanceof \ValueAuth\ApiResult\ApiError) {
+        if ($result instanceof ApiError) {
             $error = AuthenticationStatus::ApiError();
             $error->reason = $result;
             return $error;
@@ -255,7 +259,7 @@ class Adapter
                  * @var $result \ValueAuth\ApiResult\AccessTokenResult
                  */
                 $result = $this->fetchAccessToken($customerKey, AccessTokenRole::Auth, $loginKey);
-                if ($result instanceof \ValueAuth\ApiResult\ApiError) {
+                if ($result instanceof ApiError) {
                     $error = AuthenticationStatus::ApiError();
                     $error->reason = $result;
                     return $error;
@@ -265,7 +269,7 @@ class Adapter
                      * @var $result \ValueAuth\ApiResult\TwoFactorAuthSendResult
                      */
                     $result = $this->publish2FACode($accessToken);
-                    if ($result instanceof \ValueAuth\ApiResult\ApiError) {
+                    if ($result instanceof ApiError) {
                         $error = AuthenticationStatus::ApiError();
                         $error->reason = $result;
                         return $error;

@@ -3,7 +3,7 @@
   "description": "ValueAuth PHP library",
   "type": "library",
   "require": {
-    "php": "7.3.*",
+    "php": "^7.1",
     "guzzlehttp/guzzle": "^7.0",
     "tebru/gson-php": "^0.7.3",
     "myclabs/php-enum": "^1.7",

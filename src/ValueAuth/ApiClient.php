@@ -4,11 +4,11 @@
 namespace ValueAuth;
 
 
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Request;
-use http\Exception\RuntimeException;
 use Lcobucci\JWT\Parser;
 use Psr\Http\Message\ResponseInterface;
 use Tebru\Gson\Gson;
@@ -130,8 +130,8 @@ class ApiClient
         if ($apiInput && !empty($endpoint->pathParams())) {
             foreach ($endpoint->pathParams() as $key) {
                 if ($key == 'auth_code') {
-                    if (empty($this->authCode)){
-                        throw new RuntimeException("Endpoint that needs API Key requires Auth Code to be set");
+                    if (empty($this->authCode)) {
+                        throw new Exception("Endpoint that needs API Key requires Auth Code to be set");
                     }
                     $path = str_replace('{' . $key . '}', $this->authCode, $path);
                 } else if ($apiInput->$key != null) {
