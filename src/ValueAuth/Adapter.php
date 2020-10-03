@@ -87,12 +87,20 @@ class Adapter
         return $parsed;
     }
 
+    /**
+     * @param string $accessToken
+     * @return string|int
+     */
     static function extractCustomerKey(string $accessToken)
     {
         $parsed = self::parseAccessToken($accessToken);
         return $parsed->getClaim('aud');
     }
 
+    /**
+     * @param string $accessToken
+     * @return DateTime
+     */
     static function extractIssuedAt(string $accessToken)
     {
         $parsed = self::parseAccessToken($accessToken);
