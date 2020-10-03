@@ -225,7 +225,7 @@ class Adapter
      */
     function initializeApiClient(): void
     {
-        $this->client = new ApiClient($this - $this->apiUrl, $this->apiKey, null, null, $this->debug, $this->apiVersion, $this->authCode);
+        $this->client = new ApiClient($this->apiUrl, $this->apiKey, null, null, $this->debug, $this->apiVersion, $this->authCode);
     }
 
     /**
