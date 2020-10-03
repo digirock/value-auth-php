@@ -10,12 +10,14 @@ use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
 use ValueAuth\ApiInput\Get2FACodeInput;
 use ValueAuth\ApiInput\GetAccessTokenInput;
+use ValueAuth\ApiInput\GetSiteSettingInput;
 use ValueAuth\ApiInput\PostLoginCheckInput;
 use ValueAuth\ApiInput\PostLoginLogInput;
 use ValueAuth\ApiResult\AccessTokenResult;
 use ValueAuth\ApiResult\ApiError;
 use ValueAuth\ApiResult\LoginCheckResult;
 use ValueAuth\ApiResult\LoginLogResult;
+use ValueAuth\ApiResult\SiteSettingResult;
 use ValueAuth\Enum\AccessTokenRole;
 use ValueAuth\Enum\AuthenticationStatus;
 
@@ -178,6 +180,22 @@ class Adapter
 
 
     /**
+     * @param string $apiUrl
+     * @param string $apiKey
+     * @param string $authCode
+     * @param string $version
+     * @param bool $debug
+     * @return bool
+     */
+    static function checkCredentials(string $apiUrl, string $apiKey, string $authCode, string $version = "v2", bool $debug = false)
+    {
+        $client = new ApiClient($apiUrl, $apiKey, null, null, $debug, $version, $authCode);
+        $result = $client->process(new GetSiteSettingInput())->wait();
+        return $result instanceof SiteSettingResult;
+    }
+
+
+    /**
      * @param bool $loginWillSuccess
      * @param string $loginKey
      * @param string $customerKey
@@ -205,7 +223,7 @@ class Adapter
      */
     function publish2FACode(string $accessToken)
     {
-        $accessTokenClient = new ApiClient(self::ApiUrl, null, $accessToken, null, $this->client->debug);
+        $accessTokenClient = new ApiClient($this->apiUrl, null, $accessToken, null, $this->client->debug);
         /**
          * @var $input Get2FACodeInput
          */
