@@ -88,7 +88,7 @@ class Adapter
     /**
      * @param string $token
      * @param DateTime $lastLogin
-     * @return array [bool $vefiried, string $customerKey]
+     * @return array [bool $verified, string $customerKey]
      */
     function verifyAuthToken(string $token, DateTime $lastLogin)
     {
@@ -157,9 +157,10 @@ class Adapter
     }
 
     /**
-     * @param string | int $customerKey
+     * @param $customerKey
      * @param string $role
-     * @return string
+     * @param string|null $loginKey
+     * @return AccessTokenResult
      */
     function fetchAccessToken($customerKey, string $role, ?string $loginKey = null)
     {
@@ -172,7 +173,7 @@ class Adapter
          */
         $result = $this->client->process($input)->wait();
 
-        return $result->results->access_token;
+        return $result;
     }
 
 
