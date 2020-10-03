@@ -79,7 +79,7 @@ class Adapter
      * @param string $accessToken
      * @return \Lcobucci\JWT\Token
      */
-    function parseAccessToken(string $accessToken)
+    static function parseAccessToken(string $accessToken)
     {
         $parser = new Parser();
         $parsed = $parser->parse($accessToken);
@@ -128,7 +128,7 @@ class Adapter
     /**
      * @return string|null
      */
-    function getClientIp()
+    static function getClientIp()
     {
         $ip = null;
         foreach (
