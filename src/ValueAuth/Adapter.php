@@ -4,6 +4,7 @@
 namespace ValueAuth;
 
 
+use Cassandra\Date;
 use DateTime;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Signer\Key;
@@ -86,6 +87,19 @@ class Adapter
         return $parsed;
     }
 
+    static function extractCustomerKey(string $accessToken)
+    {
+        $parsed = self::parseAccessToken($accessToken);
+        return $parsed->getClaim('aud');
+    }
+
+    static function extractIssuedAt(string $accessToken)
+    {
+        $parsed = self::parseAccessToken($accessToken);
+        $issuedAt = new DateTime();
+        $issuedAt->setTimestamp((int)$parsed->getClaim('iat'));
+        return $issuedAt;
+    }
 
     /**
      * @param string $token
