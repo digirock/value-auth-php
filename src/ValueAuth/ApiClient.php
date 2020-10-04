@@ -20,6 +20,9 @@ use ValueAuth\Enum\ApiAuthentication;
 
 class ApiClient
 {
+
+    const DefaultBaseUrl = "https://api.valueauth.jp";
+    const DefaultApiVersion = "v2";
     /**
      * @var Client
      */
@@ -79,7 +82,7 @@ class ApiClient
      * @param bool $debug
      * @param string $version
      */
-    function __construct(string $baseUri, ?string $apiKey, ?string $accessToken = null, ?AccessTokenRole $role = null, bool $debug = false, string $version = 'v2', ?string $authCode = null)
+    function __construct(?string $apiKey, ?string $authCode = null, ?string $accessToken = null, ?bool $debug = false, ?string $version = self::DefaultApiVersion, ?string $baseUri = self::DefaultBaseUrl)
     {
         $options = [
             'base_uri' => $baseUri,
@@ -88,7 +91,6 @@ class ApiClient
         $this->client = new Client($options);
         $this->apiKey = $apiKey;
         $this->accessToken = $accessToken;
-        $this->currentRole = $role;
         $this->debug = $debug;
         $this->version = $version;
         $this->gson = Gson::builder()->build();
@@ -114,8 +116,12 @@ class ApiClient
         $request = new Request($endpoint->method(), $path, $headers);
         return $this->client->sendAsync($request, $options)->then(function (ResponseInterface $response) use ($endpoint) {
             return $this->gson->fromJson($response->getBody()->getContents(), $endpoint->resultType());
-        }, function (RequestException $exception) {
-            return $this->gson->fromJson($exception->getResponse()->getBody()->getContents(), ApiError::class);
+        }, function (Exception $exception) {
+            if ($exception instanceof RequestException) {
+                return $this->gson->fromJson($exception->getResponse()->getBody()->getContents(), ApiError::class);
+            } else {
+                return ApiError::fromException($exception);
+            }
         });
     }
 

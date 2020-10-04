@@ -27,13 +27,13 @@ class ApiClientTest extends TestCase
 
     function buildApiKeyClient()
     {
-        $client = new ApiClient(self::BaseUrl, self::ApiKey, null, null, true, "v2", self::SiteCode);
+        $client = new ApiClient(self::ApiKey, self::SiteCode, null, true, "v2", self::BaseUrl);
         return $client;
     }
 
     function buildAccessTokenClient(string $accessToken)
     {
-        $client = new ApiClient(self::BaseUrl, null, $accessToken, null, true);
+        $client = new ApiClient(null, null, $accessToken, true, null, self::BaseUrl);
         return $client;
     }
 
@@ -168,7 +168,8 @@ class ApiClientTest extends TestCase
         self::assertNotNull($result->results->due_date);
     }
 
-    function testGetSiteSetting(){
+    function testGetSiteSetting()
+    {
         $client = $this->buildApiKeyClient();
         $result = $client->process(new GetSiteSettingInput())->wait();
         self::assertNotNull($result);

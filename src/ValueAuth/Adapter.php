@@ -4,7 +4,6 @@
 namespace ValueAuth;
 
 
-use Cassandra\Date;
 use DateTime;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Signer\Key;
@@ -211,7 +210,7 @@ class Adapter
      */
     static function checkCredentials(string $apiUrl, string $apiKey, string $authCode, string $version = "v2", bool $debug = false)
     {
-        $client = new ApiClient($apiUrl, $apiKey, null, null, $debug, $version, $authCode);
+        $client = new ApiClient($apiKey, $authCode, null, $debug, $version, $apiUrl);
         $result = $client->process(new GetSiteSettingInput())->wait();
         return $result instanceof SiteSettingResult;
     }
@@ -245,7 +244,7 @@ class Adapter
      */
     function publish2FACode(string $accessToken)
     {
-        $accessTokenClient = new ApiClient($this->apiUrl, null, $accessToken, null, $this->client->debug);
+        $accessTokenClient = new ApiClient(null, null, $accessToken, $this->client->debug, $this->apiUrl);
         /**
          * @var $input Get2FACodeInput
          */
@@ -266,7 +265,7 @@ class Adapter
      */
     function initializeApiClient(): void
     {
-        $this->client = new ApiClient($this->apiUrl, $this->apiKey, null, null, $this->debug, $this->apiVersion, $this->authCode);
+        $this->client = new ApiClient($this->apiKey, $this->authCode, null, $this->debug, $this->apiVersion, $this->apiUrl);
     }
 
     /**
