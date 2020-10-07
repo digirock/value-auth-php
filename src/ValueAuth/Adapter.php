@@ -244,7 +244,7 @@ class Adapter
      */
     function publish2FACode(string $accessToken)
     {
-        $accessTokenClient = new ApiClient(null, null, $accessToken, $this->client->debug, $this->apiUrl);
+        $accessTokenClient = new ApiClient(null, null, $accessToken, $this->client->debug, $this->apiVersion, $this->apiUrl);
         /**
          * @var $input Get2FACodeInput
          */
