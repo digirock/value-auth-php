@@ -20,5 +20,10 @@ class AuthenticationStatus extends Enum
      */
     public $reason;
 
+    /**
+     * @var string
+     */
+    public $accessToken;
+
 
 }

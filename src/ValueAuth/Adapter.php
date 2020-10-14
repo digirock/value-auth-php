@@ -310,12 +310,21 @@ class Adapter
                      */
                     $result = $this->publish2FACode($accessToken);
                     if ($result instanceof ApiError) {
+                        /**
+                         * @var $response AuthenticationStatus
+                         */
+
                         $error = AuthenticationStatus::ApiError();
                         $error->reason = $result;
+                        $error->accessToken = $accessToken;
                         return $error;
                     } else {
+                        /**
+                         * @var $response AuthenticationStatus
+                         */
                         $response = AuthenticationStatus::Pending2FA();
                         $response->reason = $result;
+                        $response->accessToken = $accessToken;
                         return $response;
                     }
                 }
