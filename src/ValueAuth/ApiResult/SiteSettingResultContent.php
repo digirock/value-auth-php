@@ -3,39 +3,12 @@
 
 namespace ValueAuth\ApiResult;
 
-
-use ValueAuth\Enum\AuthKbn;
-
 class SiteSettingResultContent
 {
-    /**
-     * @var string
-     */
-    public $code;
 
     /**
-     * @var AuthKbn
+     * @var SiteSetting
      */
-    public $auth_kbn;
+    public $site_setting;
 
-    /**
-     * @var bool
-     */
-    public $is_sms_send;
-
-
-    /**
-     * @var bool
-     */
-    public $is_mail_send;
-
-    /**
-     * @var bool
-     */
-    public $is_location_auth;
-
-    /**
-     * @var bool
-     */
-    public $is_active;
 }

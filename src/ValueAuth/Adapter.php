@@ -208,11 +208,11 @@ class Adapter
      * @param bool $debug
      * @return bool
      */
-    static function checkCredentials(string $apiUrl, string $apiKey, string $authCode, string $version = "v2", bool $debug = false)
+    static function checkCredentials(string $apiUrl, string $apiKey, string $authCode, string $publicKey, string $version = "v2", bool $debug = false)
     {
         $client = new ApiClient($apiKey, $authCode, null, $debug, $version, $apiUrl);
         $result = $client->process(new GetSiteSettingInput())->wait();
-        return $result instanceof SiteSettingResult;
+        return ($result instanceof SiteSettingResult && $result->results->site_setting->public_key === $publicKey) ;
     }
 
 
