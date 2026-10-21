@@ -7,6 +7,7 @@ namespace ValueAuth\Jwt;
 use InvalidArgumentException;
 use OutOfBoundsException;
 use RuntimeException;
+use stdClass;
 
 /**
  * JSON Web Token issued by the ValueAuth API.
@@ -17,23 +18,23 @@ final class Token
     /**
      * @var array
      */
-    protected $headers;
+    private $headers;
 
     /**
      * @var array
      */
-    protected $claims;
+    private $claims;
 
     /**
      * Encoded header and claims as received. This is what the signature covers.
      * @var string
      */
-    protected $payload;
+    private $payload;
 
     /**
      * @var string
      */
-    protected $signature;
+    private $signature;
 
     /**
      * Use parse(). The claims and the payload must come from the same token, or verify() says nothing about the claims.
@@ -54,7 +55,7 @@ final class Token
      * @param string $jwt
      * @return Token
      * @throws InvalidArgumentException when the token does not have three parts or is encrypted
-     * @throws RuntimeException when the header or the claims are not JSON
+     * @throws RuntimeException when a part is not canonical base64url, or the header or the claims are not a JSON object
      */
     static function parse(string $jwt): Token
     {
@@ -63,11 +64,11 @@ final class Token
             throw new InvalidArgumentException('The JWT string must have two dots');
         }
 
-        $headers = (array)self::jsonDecode(self::base64UrlDecode($parts[0]));
+        $headers = self::jsonObject(self::base64UrlDecode($parts[0]), 'header');
         if (isset($headers['enc'])) {
             throw new InvalidArgumentException('Encryption is not supported yet');
         }
-        $claims = (array)self::jsonDecode(self::base64UrlDecode($parts[1]));
+        $claims = self::jsonObject(self::base64UrlDecode($parts[1]), 'claims');
 
         return new self($headers, $claims, $parts[0] . '.' . $parts[1], self::base64UrlDecode($parts[2]));
     }
@@ -83,7 +84,7 @@ final class Token
 
     /**
      * @param string $name
-     * @param mixed $default
+     * @param mixed $default returned when the claim is missing, even when it is null
      * @return mixed
      * @throws OutOfBoundsException when the claim is missing and no default is given
      */
@@ -93,7 +94,7 @@ final class Token
             return $this->claims[$name];
         }
 
-        if ($default === null) {
+        if (func_num_args() === 1) {
             throw new OutOfBoundsException('Requested claim is not configured');
         }
 
@@ -121,20 +122,29 @@ final class Token
         if ($key === false) {
             throw new InvalidArgumentException('It was not possible to parse your key, reason: ' . openssl_error_string());
         }
-        $details = openssl_pkey_get_details($key);
-        if ($details === false || $details['type'] !== OPENSSL_KEYTYPE_RSA) {
-            throw new InvalidArgumentException('This key is not compatible with this signer');
-        }
 
-        return openssl_verify($this->payload, $this->signature, $key, OPENSSL_ALGO_SHA256) === 1;
+        try {
+            $details = openssl_pkey_get_details($key);
+            if ($details === false || $details['type'] !== OPENSSL_KEYTYPE_RSA) {
+                throw new InvalidArgumentException('This key is not compatible with this signer');
+            }
+
+            return openssl_verify($this->payload, $this->signature, $key, OPENSSL_ALGO_SHA256) === 1;
+        } finally {
+            // PHP 7 keeps the key resource until the end of the request unless it is freed. PHP 8 frees the key object itself.
+            if (PHP_VERSION_ID < 80000) {
+                openssl_free_key($key);
+            }
+        }
     }
 
     /**
      * @param string $json
-     * @return mixed
-     * @throws RuntimeException
+     * @param string $part
+     * @return array the top level of the JSON object
+     * @throws RuntimeException when the text is not a JSON object
      */
-    protected static function jsonDecode(string $json)
+    private static function jsonObject(string $json, string $part): array
     {
         $data = json_decode($json);
 
@@ -142,19 +152,29 @@ final class Token
             throw new RuntimeException('Error while decoding to JSON: ' . json_last_error_msg());
         }
 
-        return $data;
+        if (!$data instanceof stdClass) {
+            throw new RuntimeException('The JWT ' . $part . ' must be a JSON object');
+        }
+
+        return (array)$data;
     }
 
     /**
+     * Only the canonical form is accepted, so that one token has one string: no padding, no characters outside base64url,
+     * and no bits set after the last byte.
+     *
      * @param string $data
      * @return string
+     * @throws RuntimeException
      */
-    protected static function base64UrlDecode(string $data): string
+    private static function base64UrlDecode(string $data): string
     {
-        if ($remainder = strlen($data) % 4) {
-            $data .= str_repeat('=', 4 - $remainder);
+        $decoded = base64_decode(strtr($data, '-_', '+/'), true);
+
+        if ($decoded === false || rtrim(strtr(base64_encode($decoded), '+/', '-_'), '=') !== $data) {
+            throw new RuntimeException('Error while decoding from Base64Url, invalid base64 characters detected');
         }
 
-        return (string)base64_decode(strtr($data, '-_', '+/'));
+        return $decoded;
     }
 }

@@ -192,6 +192,86 @@ class AdapterTokenTest extends TestCase
         Adapter::extractCustomerKey(self::$site->sign(['typ' => 'JWT', 'alg' => 'RS256', 'enc' => 'A128GCM'], $this->payload()));
     }
 
+    function parseError(string $token)
+    {
+        try {
+            Adapter::parseAccessToken($token);
+        } catch (\Exception $e) {
+            return $e;
+        }
+        return null;
+    }
+
+    public function testPartsMustBeCanonicalBase64Url()
+    {
+        [$header, $claims, $signature] = explode('.', self::$site->issue($this->payload()));
+
+        // The last character of a base64 string can carry unused bits; other characters there decode to the same bytes.
+        $bytes = base64_decode(strtr($signature, '-_', '+/'));
+        $variant = null;
+        foreach (str_split('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_') as $c) {
+            $candidate = substr($signature, 0, -1) . $c;
+            if ($candidate !== $signature && base64_decode(strtr($candidate, '-_', '+/')) === $bytes) {
+                $variant = $candidate;
+                break;
+            }
+        }
+        $this->assertNotNull($variant);
+
+        $tokens = [
+            'characters outside base64url' => $header . '.' . $claims . '.' . $signature . '!!',
+            'unused bits set' => $header . '.' . $claims . '.' . $variant,
+            'padding' => $header . '.' . $claims . '=.' . $signature,
+            'standard base64 alphabet' => $header . '.' . $claims . '.+' . substr($signature, 1),
+        ];
+        foreach ($tokens as $name => $token) {
+            $this->assertInstanceOf(\RuntimeException::class, $this->parseError($token), $name);
+        }
+    }
+
+    public function testHeaderAndClaimsMustBeJsonObjects()
+    {
+        $header = json_encode(['typ' => 'JWT', 'alg' => 'RS256']);
+        $tokens = [
+            'claims null' => self::$site->signJson($header, 'null'),
+            'claims number' => self::$site->signJson($header, '123'),
+            'claims string' => self::$site->signJson($header, '"x"'),
+            'claims list' => self::$site->signJson($header, '[42]'),
+            'header string' => self::$site->signJson('"RS256"', json_encode($this->payload())),
+        ];
+        foreach ($tokens as $name => $token) {
+            $e = $this->parseError($token);
+            $this->assertInstanceOf(\RuntimeException::class, $e, $name);
+            $this->assertNotInstanceOf(\OutOfBoundsException::class, $e, $name);
+        }
+    }
+
+    public function testGetClaimReturnsTheGivenDefaultEvenWhenItIsNull()
+    {
+        $token = Adapter::parseAccessToken(self::$site->issue($this->payload()));
+        $this->assertNull($token->getClaim('missing', null));
+        $this->expectException(\OutOfBoundsException::class);
+        $token->getClaim('missing');
+    }
+
+    public function testVerifyDoesNotKeepKeyResources()
+    {
+        $token = self::$site->issue($this->payload());
+        $adapter = $this->adapter();
+        // PHP 7 gives OpenSSL keys as resources; PHP 8 gives objects, so there are none to count there.
+        // On PHP 7 a freed key can stay listed as "Unknown" while an OpenSSL function still holds it, but the key itself is gone.
+        $liveKeys = function () {
+            return count(array_filter(get_resources(), function ($resource) {
+                return get_resource_type($resource) === 'OpenSSL key';
+            }));
+        };
+        $before = $liveKeys();
+        for ($i = 0; $i < 20; $i++) {
+            $adapter->verifyAuthToken($token, $this->secondsAgo(60));
+        }
+        $this->assertSame($before, $liveKeys());
+    }
+
     public function testTokenWithoutAudienceThrowsOutOfBounds()
     {
         $payload = $this->payload();

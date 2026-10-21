@@ -211,7 +211,7 @@ class ApiClient
     }
 
     /**
-     *
+     * Reads aud and role without checking the signature. The API checks the access token when it is used.
      */
     protected function parseAccessToken(): void
     {
