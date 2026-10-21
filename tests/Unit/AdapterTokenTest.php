@@ -131,9 +131,10 @@ class AdapterTokenTest extends TestCase
     public function testVerifyAuthTokenUsesTheReceivedJsonAsIs()
     {
         // firebase/php-jwt 5.x escapes "/" in the JSON.
-        // The signature covers the received text, so the claims must not be encoded again before verifying.
+        // The signature covers the received text, so neither the header nor the claims are encoded again before verifying.
+        $header = json_encode(['typ' => 'JWT', 'alg' => 'RS256'], JSON_PRETTY_PRINT);
         $payload = json_encode($this->payload(['iss' => 'https://example.com/site']), JSON_PRETTY_PRINT);
-        $token = self::$site->signJson(json_encode(['typ' => 'JWT', 'alg' => 'RS256']), $payload);
+        $token = self::$site->signJson($header, $payload);
         $this->assertSame([true, 42], $this->adapter()->verifyAuthToken($token, $this->secondsAgo(60)));
         $this->assertSame('https://example.com/site', Adapter::parseAccessToken($token)->getClaim('iss'));
     }
@@ -164,6 +165,12 @@ class AdapterTokenTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         Adapter::extractCustomerKey('not-a-token');
+    }
+
+    public function testTokenWithMoreThanThreePartsThrowsInvalidArgument()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Adapter::extractCustomerKey(self::$site->issue($this->payload()) . '.extra');
     }
 
     public function testTokenWithBrokenJsonThrowsRuntime()
@@ -197,6 +204,13 @@ class AdapterTokenTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->adapter('not a key')->verifyAuthToken(self::$site->issue($this->payload()), $this->secondsAgo(60));
+    }
+
+    public function testUnsignedTokenIsNotVerifiedBeforeTheKeyIsRead()
+    {
+        $token = $this->unsigned(['typ' => 'JWT', 'alg' => 'RS256'], $this->payload());
+        $this->assertSame([false, 42], $this->adapter('not a key')->verifyAuthToken($token, $this->secondsAgo(60)));
+        $this->assertSame([false, 42], $this->adapter(TokenFactory::ecPublicKey())->verifyAuthToken($token, $this->secondsAgo(60)));
     }
 
     public function testNonRsaPublicKeyThrowsInvalidArgument()

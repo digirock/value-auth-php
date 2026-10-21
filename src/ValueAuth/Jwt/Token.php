@@ -12,7 +12,7 @@ use RuntimeException;
  * JSON Web Token issued by the ValueAuth API.
  * parse() does not check the signature. verify() checks RS256 only, as lcobucci/jwt 3.x did for this SDK.
  */
-class Token
+final class Token
 {
     /**
      * @var array
@@ -36,13 +36,13 @@ class Token
     protected $signature;
 
     /**
-     * Token constructor.
+     * Use parse(). The claims and the payload must come from the same token, or verify() says nothing about the claims.
      * @param array $headers
      * @param array $claims
      * @param string $payload
      * @param string $signature
      */
-    function __construct(array $headers, array $claims, string $payload, string $signature)
+    private function __construct(array $headers, array $claims, string $payload, string $signature)
     {
         $this->headers = $headers;
         $this->claims = $claims;
@@ -109,6 +109,7 @@ class Token
      */
     function verify(string $publicKey): bool
     {
+        // An unsigned token is not verified, before the key is read: a key that cannot be read does not turn it into an exception.
         if (($this->headers['alg'] ?? null) !== 'RS256' || $this->signature === '') {
             return false;
         }
