@@ -5,9 +5,6 @@ namespace ValueAuth;
 
 
 use DateTime;
-use Lcobucci\JWT\Parser;
-use Lcobucci\JWT\Signer\Key;
-use Lcobucci\JWT\Signer\Rsa\Sha256;
 use ValueAuth\ApiInput\Get2FACodeInput;
 use ValueAuth\ApiInput\GetAccessTokenInput;
 use ValueAuth\ApiInput\GetSiteSettingInput;
@@ -20,6 +17,7 @@ use ValueAuth\ApiResult\LoginLogResult;
 use ValueAuth\ApiResult\SiteSettingResult;
 use ValueAuth\Enum\AccessTokenRole;
 use ValueAuth\Enum\AuthenticationStatus;
+use ValueAuth\Jwt\Token;
 
 class Adapter
 {
@@ -77,13 +75,11 @@ class Adapter
 
     /**
      * @param string $accessToken
-     * @return \Lcobucci\JWT\Token
+     * @return Token
      */
     static function parseAccessToken(string $accessToken)
     {
-        $parser = new Parser();
-        $parsed = $parser->parse($accessToken);
-        return $parsed;
+        return Token::parse($accessToken);
     }
 
     /**
@@ -117,11 +113,9 @@ class Adapter
     {
         $parsed = $this->parseAccessToken($token);
         $customerKey = $parsed->getClaim('aud');
-        $pubKey = new Key($this->publicKey);
-        $signer = new Sha256();
         $issuedAt = new DateTime();
         $issuedAt->setTimestamp((int)$parsed->getClaim('iat'));
-        $verified = $parsed->verify($signer, $pubKey);
+        $verified = $parsed->verify($this->publicKey);
         $publishedAfterLogin = $lastLogin < $issuedAt;
 
         return [$verified && $publishedAfterLogin, $customerKey];

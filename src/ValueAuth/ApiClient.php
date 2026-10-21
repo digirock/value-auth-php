@@ -9,7 +9,6 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Request;
-use Lcobucci\JWT\Parser;
 use Psr\Http\Message\ResponseInterface;
 use Tebru\Gson\Gson;
 use ValueAuth\ApiEndpoint\ApiEndpoint;
@@ -17,6 +16,7 @@ use ValueAuth\ApiInput\ApiInput;
 use ValueAuth\ApiResult\ApiError;
 use ValueAuth\Enum\AccessTokenRole;
 use ValueAuth\Enum\ApiAuthentication;
+use ValueAuth\Jwt\Token;
 
 class ApiClient
 {
@@ -64,11 +64,6 @@ class ApiClient
     public $currentCustomerKey;
 
     /**
-     * @var Parser
-     */
-    protected $jwtParser;
-
-    /**
      * @var string
      */
     public $authCode;
@@ -94,7 +89,6 @@ class ApiClient
         $this->debug = $debug;
         $this->version = $version;
         $this->gson = Gson::builder()->build();
-        $this->jwtParser = new Parser();
         $this->authCode = $authCode;
         $this->parseAccessToken();
 
@@ -222,7 +216,7 @@ class ApiClient
     protected function parseAccessToken(): void
     {
         if (!empty($this->accessToken)) {
-            $token = $this->jwtParser->parse($this->accessToken);
+            $token = Token::parse($this->accessToken);
             $aud = $token->getClaim('aud');
             $role = $token->getClaim('role');
             $this->currentCustomerKey = $aud;
